@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tembus Link — PanzzDev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050608;
+    --bg-alt:#0a0d14;
+    --text:#e7ecff;
+    --muted:#7c88a8;
+    --cyan:#2f8fff;
+    --blue-soft:#6cb6ff;
+    --purple:#5b7cff;
+    --line:#1b2233;
+    --error:#ff4d6d;
+    --radius:8px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    line-height:1.65;
+    overflow-x:hidden;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.035) 1px, transparent 1px);
+    background-size:38px 38px;
+  }
+  body.lock{overflow:hidden; height:100vh;}
+  h1,h2,h3{
+    font-family:'Chakra Petch', sans-serif;
+    font-weight:600;
+    line-height:1.15;
+  }
+  a{color:inherit;}
+  .wrap{max-width:720px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- reveal on scroll ---------- */
+  .reveal{opacity:0; transform:translateY(22px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in-view{opacity:1; transform:none;}
+  @media (prefers-reduced-motion: reduce){ .reveal{transition:none; opacity:1; transform:none;} }
+
+  /* ---------- main content blur behind overlay ---------- */
+  #mainContent{transition:filter .6s ease, transform .6s ease; filter:blur(0); }
+  #mainContent.blurred{filter:blur(14px); transform:scale(1.02); pointer-events:none;}
+
+  /* ================= WELCOME OVERLAY ================= */
+  #welcomeOverlay{
+    position:fixed; inset:0; z-index:100;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 30% 20%, rgba(139,92,246,0.18), transparent 55%),
+               radial-gradient(circle at 80% 80%, rgba(0,240,255,0.12), transparent 50%),
+               rgba(4,5,8,0.92);
+    padding:24px;
+    transition:opacity .5s ease;
+  }
+  #welcomeOverlay.hide{opacity:0; pointer-events:none;}
+  .scanlines{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay;
+  }
+  .welcome-card{
+    position:relative;
+    max-width:460px; width:100%;
+    border:1px solid rgba(0,240,255,0.35);
+    background:linear-gradient(180deg, rgba(10,13,20,0.9), rgba(6,7,11,0.95));
+    border-radius:14px;
+    padding:38px 30px;
+    box-shadow:0 0 0 1px rgba(0,240,255,0.08), 0 0 60px rgba(0,240,255,0.12), 0 0 100px rgba(139,92,246,0.08);
+    animation:card-in .6s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  @keyframes card-in{ from{opacity:0; transform:translateY(18px) scale(.97);} to{opacity:1; transform:none;} }
+  .welcome-tag{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:11.5px; color:var(--cyan);
+    border:1px solid rgba(0,240,255,0.35);
+    padding:5px 10px; border-radius:100px;
+    margin-bottom:20px;
+  }
+  .welcome-tag .dot{width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); animation:blink 1.6s ease-in-out infinite;}
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  .welcome-card h1{
+    font-size:clamp(26px, 6vw, 32px);
+    color:var(--text);
+    text-shadow:0 0 14px rgba(0,240,255,0.35);
+  }
+  .welcome-card h1 span{
+    color:var(--blue-soft);
+    text-shadow:0 0 14px rgba(108,182,255,0.5);
+  }
+  .welcome-card p.about{
+    margin-top:14px;
+    font-size:13.5px;
+    color:var(--muted);
+    line-height:1.7;
+  }
+  .welcome-list{
+    margin-top:20px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .welcome-list div{
+    display:flex; gap:10px; align-items:flex-start;
+    font-size:12.5px; color:var(--text);
+  }
+  .welcome-list div::before{
+    content:"›"; color:var(--cyan); font-weight:700;
+    text-shadow:0 0 8px var(--cyan);
+  }
+  .welcome-actions{
+    margin-top:28px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .btn-neon{
+    display:block; width:100%; text-align:center;
+    padding:13px 18px; border-radius:7px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13.5px; font-weight:600;
+    cursor:pointer; text-decoration:none;
+    letter-spacing:0.02em;
+    transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  }
+  .btn-neon:active{transform:scale(.98);}
+  .btn-follow{
+    background:transparent;
+    border:1px solid rgba(139,92,246,0.5);
+    color:#c9b8ff;
+  }
+  .btn-follow:hover{box-shadow:0 0 18px rgba(139,92,246,0.35); border-color:var(--purple);}
+  .btn-start{
+    background:linear-gradient(90deg, var(--cyan), var(--blue-soft));
+    border:none; color:#03060a;
+  }
+  .btn-start:hover{filter:brightness(1.08); box-shadow:0 0 24px rgba(0,240,255,0.4);}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative; min-height:100svh; display:flex; flex-direction:column; justify-content:center; padding:100px 0 140px;}
+  .hero-mark{font-size:12.5px; color:var(--cyan); margin-bottom:24px; letter-spacing:0.04em;}
+  .hero-mark::before{content:"// "; color:var(--muted);}
+  .hero h1{
+    font-size:clamp(38px, 8vw, 60px);
+    letter-spacing:-0.01em;
+    color:var(--text);
+    text-shadow:0 0 24px rgba(0,240,255,0.18);
+  }
+  .hero h1 em{
+    font-style:normal;
+    background:linear-gradient(90deg, var(--cyan), var(--blue-soft));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero p.lede{margin-top:22px; max-width:52ch; color:var(--muted); font-size:14.5px;}
+
+  /* ---------- tool form ---------- */
+  .tool{margin-top:40px;}
+  form{
+    display:flex; gap:10px;
+    background:var(--bg-alt);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:6px;
+  }
+  form:focus-within{border-color:rgba(0,240,255,0.5); box-shadow:0 0 0 1px rgba(0,240,255,0.15);}
+  input[type=url]{
+    flex:1; background:transparent; border:none; color:var(--text);
+    padding:14px; font-size:14px; font-family:'JetBrains Mono', monospace; outline:none;
+  }
+  input[type=url]::placeholder{color:#4a5266;}
+  button.submit{
+    background:linear-gradient(90deg, var(--cyan), var(--blue-soft));
+    color:#03060a; border:none; padding:0 22px; border-radius:6px;
+    font-weight:700; font-size:13.5px; font-family:'JetBrains Mono', monospace;
+    cursor:pointer; transition:filter .2s ease, box-shadow .2s ease;
+  }
+  button.submit:hover:not(:disabled){filter:brightness(1.1); box-shadow:0 0 18px rgba(0,240,255,0.3);}
+  button.submit:disabled{opacity:.55; cursor:wait;}
+
+  .scroll-cue{margin-top:60px; display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12.5px;}
+  .scroll-cue svg{animation:bob 1.8s ease-in-out infinite; color:var(--cyan);}
+  @keyframes bob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(5px);} }
+
+  /* ---------- loading & result ---------- */
+  .loading, .result{margin-top:18px; padding:16px; border-radius:var(--radius); border:1px solid var(--line); background:var(--bg-alt); display:none;}
+  .loading.show, .result.show{display:block;}
+  .result.error{border-color:rgba(255,77,109,0.5);}
+  .loading-top{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .spinner{width:15px; height:15px; border-radius:50%; border:2px solid rgba(0,240,255,0.15); border-top-color:var(--cyan); animation:spin .7s linear infinite; flex-shrink:0;}
+  @keyframes spin{ to{transform:rotate(360deg);} }
+  .loading-text{font-size:12.5px; color:var(--muted);}
+  .progress-track{height:3px; border-radius:100px; background:rgba(0,240,255,0.12); overflow:hidden;}
+  .progress-fill{height:100%; width:30%; border-radius:100px; background:linear-gradient(90deg, var(--cyan), var(--blue-soft)); animation:slide 1.1s ease-in-out infinite;}
+  @keyframes slide{ 0%{transform:translateX(-100%);} 50%{transform:translateX(150%);} 100%{transform:translateX(320%);} }
+
+  .result-label{font-size:11.5px; color:var(--muted); margin-bottom:8px;}
+  .result-link{word-break:break-all; color:var(--cyan); font-size:13.5px; display:block; margin-bottom:14px;}
+  .actions{display:flex; gap:8px;}
+  .actions a, .actions button{flex:1; text-align:center; text-decoration:none; font-size:12.5px; padding:10px 0; border-radius:6px; font-family:'JetBrains Mono', monospace;}
+  .btn-open{background:linear-gradient(90deg, var(--cyan), var(--blue-soft)); color:#03060a; font-weight:700; border:none;}
+  .btn-copy{background:transparent; border:1px solid var(--line); color:var(--text); cursor:pointer;}
+  .error-msg{color:var(--error); font-size:12.5px;}
+  .raw{margin-top:10px; font-size:10.5px; color:var(--muted); white-space:pre-wrap; word-break:break-all; max-height:120px; overflow:auto;}
+
+  /* ---------- diagonal divider ---------- */
+  .cut{height:80px; background:var(--bg-alt); clip-path:polygon(0 100%, 100% 0, 100% 100%); margin-top:-1px; position:relative;}
+  .cut::before{content:""; position:absolute; top:0; left:0; width:100%; height:2px; background:linear-gradient(90deg, transparent, var(--cyan), var(--blue-soft), transparent); opacity:.5;}
+
+  /* ---------- features ---------- */
+  .features{background:var(--bg-alt); padding:90px 0 100px;}
+  .features h2{font-size:clamp(28px, 5vw, 36px); max-width:14ch; color:var(--text);}
+  .features .sub{color:var(--muted); margin-top:14px; max-width:46ch; font-size:13.5px;}
+  .feature-list{margin-top:48px;}
+  .feature-item{display:grid; grid-template-columns:36px 1fr; gap:18px; padding:26px 0; border-top:1px solid var(--line);}
+  .feature-item:last-child{border-bottom:1px solid var(--line);}
+  .feature-item .mark{color:var(--cyan); font-family:'Chakra Petch', sans-serif; font-size:20px; text-shadow:0 0 10px rgba(0,240,255,0.4);}
+  .feature-item h3{font-size:17px; font-weight:600; margin-bottom:6px; color:var(--text);}
+  .feature-item p{color:var(--muted); font-size:13.5px; max-width:50ch;}
+
+  /* ---------- how it works ---------- */
+  .how{padding:100px 0;}
+  .how h2{font-size:clamp(28px, 5vw, 36px); max-width:16ch; color:var(--text);}
+  .steps{margin-top:48px; display:flex; flex-direction:column; gap:36px;}
+  .step{display:grid; grid-template-columns:44px 1fr; gap:18px; align-items:start;}
+  .step .num{font-family:'Chakra Petch', sans-serif; font-size:24px; color:var(--blue-soft); text-shadow:0 0 10px rgba(108,182,255,0.4);}
+  .step h3{font-size:16.5px; font-weight:600; margin-bottom:5px; color:var(--text);}
+  .step p{color:var(--muted); font-size:13.5px; max-width:48ch;}
+
+  /* ---------- footer ---------- */
+  footer{padding:60px 0 50px; border-top:1px solid var(--line);}
+  footer p{color:var(--muted); font-size:12px;}
+  .section-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--cyan);
+    margin-bottom:10px;
+    letter-spacing:0.02em;
+  }
+  .terminal{
+    margin-top:18px;
+    background:#0a0d14;
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 0 0 1px rgba(47,143,255,0.05);
+  }
+  .terminal-bar{
+    display:flex; align-items:center; gap:8px;
+    padding:9px 12px;
+    background:#0d1119;
+    border-bottom:1px solid var(--line);
+  }
+  .terminal-dot{width:10px; height:10px; border-radius:50%;}
+  .terminal-dot.red{background:#ff5f57;}
+  .terminal-dot.yellow{background:#febc2e;}
+  .terminal-dot.green{background:#28c840;}
+  .terminal-title{
+    margin-left:6px;
+    font-size:11px;
+    color:var(--muted);
+    font-family:'JetBrains Mono', monospace;
+  }
+  .terminal-body{padding:14px 16px; font-size:12px; line-height:1.9;}
+  .terminal-body .line{color:var(--muted);}
+  .terminal-body .line .prompt{color:var(--cyan);}
+  .terminal-body .line.ready{color:var(--text);}
+  .caret{
+    display:inline-block; width:6px; height:12px;
+    background:var(--cyan); margin-left:2px; vertical-align:middle;
+    animation:blink 1s step-end infinite;
+  }
+</style>
+</head>
+<body class="lock">
+
+<div id="welcomeOverlay">
+  <div class="scanlines"></div>
+  <div class="welcome-card">
+    <div class="welcome-tag"><span class="dot"></span>PanzzDev &lt;/&gt;</div>
+    <h1>Selamat datang<br>di <span>Tembus Link</span></h1>
+    <p class="about">Ini alat buat lewatin halaman iklan shortener (Linkvertise, sfl.gl, dll) dan langsung ambil link aslinya — dibikin sama PanzzDev, ditenagai Omegatech API.</p>
+    <div class="welcome-list">
+      <div>Bebas iklan &amp; timer, langsung ke intinya</div>
+      <div>Dukung banyak shortener populer</div>
+      <div>Ringan, jalan langsung dari browser HP</div>
+    </div>
+    <div class="welcome-actions">
+      <a class="btn-neon btn-follow" href="https://whatsapp.com/channel/0029Vb3inHL96H4UmVSaxG1d/139" target="_blank" rel="noopener">Follow saluran PanzzDev &lt;/&gt;</a>
+      <button class="btn-neon btn-start" id="startBtn" type="button">Mulai Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<div id="mainContent" class="blurred">
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-mark">tembus_link.sh</div>
+    <h1>Lewati iklannya.<br><em>Ambil</em> yang kamu cari.</h1>
+    <p class="lede">Tempel link Linkvertise, sfl.gl, atau shortener sejenis — dapatkan link aslinya langsung, tanpa halaman perantara dan tanpa nunggu timer.</p>
+
+    <div class="tool">
+      <form id="form">
+        <input type="url" id="linkInput" placeholder="https://sfl.gl/xxxxxxx" required>
+        <button type="submit" class="submit" id="submitBtn">Bypass</button>
+      </form>
+
+      <div class="loading" id="loading">
+        <div class="loading-top">
+          <div class="spinner"></div>
+          <div class="loading-text" id="loadingText">Menembus link, tunggu sebentar...</div>
+        </div>
+        <div class="progress-track"><div class="progress-fill"></div></div>
+      </div>
+
+      <div class="result" id="result">
+        <div class="result-label" id="resultLabel">Link akhir</div>
+        <a class="result-link" id="resultLink" target="_blank" rel="noopener"></a>
+        <div class="actions" id="resultActions">
+          <a class="btn-open" id="openBtn" href="#" target="_blank" rel="noopener">Buka link</a>
+          <button class="btn-copy" id="copyBtn" type="button">Salin</button>
+        </div>
+        <div class="raw" id="rawBox"></div>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="terminal-dot red"></span>
+        <span class="terminal-dot yellow"></span>
+        <span class="terminal-dot green"></span>
+        <span class="terminal-title">tembus_link — terminal</span>
+      </div>
+      <div class="terminal-body">
+        <div class="line"><span class="prompt">$</span> menghubungkan ke omegatech-api...</div>
+        <div class="line"><span class="prompt">$</span> proxy /api/bypass aktif</div>
+        <div class="line ready"><span class="prompt">$</span> ready — tempel link, lalu klik Bypass<span class="caret"></span></div>
+      </div>
+    </div>
+
+    <div class="scroll-cue">
+      <svg width="14" height="18" viewBox="0 0 14 18" fill="none"><path d="M7 1v14M1 9l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      kenapa lewat sini
+    </div>
+  </div>
+</section>
+
+<div class="cut"></div>
+
+<section class="features">
+  <div class="wrap">
+    <div class="section-eyebrow reveal">01 — kenapa lewat sini</div>
+    <h2 class="reveal">Bukan cuma soal cepat</h2>
+    <p class="sub reveal">Beberapa alasan sederhana kenapa ini lebih enak dipakai dibanding klik link satu-satu.</p>
+
+    <div class="feature-list">
+      <div class="feature-item reveal">
+        <div class="mark">&gt;</div>
+        <div>
+          <h3>Bebas iklan &amp; timer</h3>
+          <p>Nggak ada halaman perantara, nggak ada hitungan mundur sebelum tombol muncul.</p>
+        </div>
+      </div>
+      <div class="feature-item reveal">
+        <div class="mark">&gt;</div>
+        <div>
+          <h3>Dukung banyak shortener</h3>
+          <p>Linkvertise, sfl.gl, dan layanan pemendek sejenis lainnya.</p>
+        </div>
+      </div>
+      <div class="feature-item reveal">
+        <div class="mark">&gt;</div>
+        <div>
+          <h3>Hasil apa adanya</h3>
+          <p>Link tujuan ditampilkan langsung — tinggal dibuka atau disalin, tanpa basa-basi.</p>
+        </div>
+      </div>
+      <div class="feature-item reveal">
+        <div class="mark">&gt;</div>
+        <div>
+          <h3>Ringan di HP</h3>
+          <p>Jalan langsung dari browser, tanpa perlu install aplikasi tambahan.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <div class="section-eyebrow reveal">02 — cara kerja</div>
+    <h2 class="reveal">Cara kerjanya</h2>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="num">01</div>
+        <div>
+          <h3>Tempel link shortener</h3>
+          <p>Salin link Linkvertise / sfl.gl / sejenisnya, tempel di kolom paling atas.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="num">02</div>
+        <div>
+          <h3>Sistem yang proses</h3>
+          <p>Server yang menembus lapisan iklan dan redirect-nya, bukan kamu yang klik satu-satu.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="num">03</div>
+        <div>
+          <h3>Link asli keluar</h3>
+          <p>Tinggal buka langsung atau salin ke tempat lain.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Dibuat buat mempercepat akses, bukan buat nambah langkah.</p>
+    <p>© 2026 - PanzzDev &lt;/&gt; • powered by omegatech</p>
+  </div>
+</footer>
+
+</div>
+
+<script>
+// ---------- welcome overlay ----------
+const overlay = document.getElementById("welcomeOverlay");
+const mainContent = document.getElementById("mainContent");
+const startBtn = document.getElementById("startBtn");
+
+startBtn.addEventListener("click", () => {
+  overlay.classList.add("hide");
+  mainContent.classList.remove("blurred");
+  document.body.classList.remove("lock");
+  setTimeout(() => { overlay.style.display = "none"; }, 500);
+});
+
+// ---------- bypass tool ----------
+const OMEGA_URL = "https://omegatech-api.dixonomega.tech/api/tools/All-bypass";
+const API_BASE = "/api/bypass"; // proxy sendiri di Vercel, hindari masalah CORS
+
+const form = document.getElementById("form");
+const linkInput = document.getElementById("linkInput");
+const submitBtn = document.getElementById("submitBtn");
+const resultBox = document.getElementById("result");
+const loadingBox = document.getElementById("loading");
+const loadingText = document.getElementById("loadingText");
+const resultLabel = document.getElementById("resultLabel");
+const resultLink = document.getElementById("resultLink");
+const resultActions = document.getElementById("resultActions");
+const openBtn = document.getElementById("openBtn");
+const copyBtn = document.getElementById("copyBtn");
+const rawBox = document.getElementById("rawBox");
+
+function extractFinalUrl(data) {
+  if (typeof data?.result === "string" && data.result.startsWith("http")) {
+    return data.result;
+  }
+  const fallback = [data?.data, data?.url, data?.link];
+  for (const c of fallback) {
+    if (typeof c === "string" && c.startsWith("http")) return c;
+  }
+  return null;
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const link = linkInput.value.trim();
+  if (!link) return;
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Memproses...";
+  resultBox.classList.remove("show", "error");
+  resultActions.style.display = "flex";
+  rawBox.textContent = "";
+
+  const loadingMessages = [
+    "Menembus link, tunggu sebentar...",
+    "Melewati halaman iklan...",
+    "Mengambil link tujuan...",
+  ];
+  let msgIndex = 0;
+  loadingText.textContent = loadingMessages[0];
+  loadingBox.classList.add("show");
+  const loadingInterval = setInterval(() => {
+    msgIndex = (msgIndex + 1) % loadingMessages.length;
+    loadingText.textContent = loadingMessages[msgIndex];
+  }, 1400);
+
+  try {
+    const apiUrl = `${API_BASE}?url=${encodeURIComponent(link)}`;
+    const res = await fetch(apiUrl);
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data) {
+      throw new Error("API tidak memberi response yang valid (status " + res.status + ")");
+    }
+
+    const finalUrl = extractFinalUrl(data);
+
+    if (finalUrl) {
+      resultLabel.textContent = "Link akhir";
+      resultLink.textContent = finalUrl;
+      resultLink.href = finalUrl;
+      openBtn.href = finalUrl;
+      rawBox.textContent = "";
+      resultBox.classList.add("show");
+    } else {
+      resultLabel.textContent = "Tidak bisa menemukan link otomatis, ini response mentahnya:";
+      resultLink.textContent = "";
+      resultLink.removeAttribute("href");
+      resultActions.style.display = "none";
+      rawBox.textContent = JSON.stringify(data, null, 2);
+      resultBox.classList.add("show");
+    }
+  } catch (err) {
+    resultLabel.textContent = "";
+    resultLink.textContent = "";
+    resultActions.style.display = "none";
+    resultBox.classList.add("show", "error");
+    rawBox.textContent = "";
+    resultLink.outerHTML = `<div class="error-msg">Gagal: ${err.message}</div>`;
+  } finally {
+    clearInterval(loadingInterval);
+    loadingBox.classList.remove("show");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Bypass";
+  }
+});
+
+copyBtn.addEventListener("click", () => {
+  const text = resultLink.textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text);
+  copyBtn.textContent = "Tersalin!";
+  setTimeout(() => (copyBtn.textContent = "Salin"), 1500);
+});
+
+// ---------- scroll reveal ----------
+const revealEls = document.querySelectorAll(".reveal");
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("in-view");
+      io.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+revealEls.forEach((el) => io.observe(el));
+</script>
+
+</body>
+</html>
